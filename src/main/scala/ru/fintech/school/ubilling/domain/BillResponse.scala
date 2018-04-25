@@ -8,7 +8,7 @@ import java.util.UUID
 import spray.json._
 import DefaultJsonProtocol._
 
-case class BillResponse(id: UUID, bill: Bill)
+case class BillResponse(id: UUID, bill: BillView)
 object BillResponse {
   implicit lazy val localDateFormat: JsonFormat[LocalDate] = new JsonFormat[LocalDate] {
     override def write(obj: LocalDate): JsValue = JsString(DateTimeFormatter.ISO_DATE.format(obj))
@@ -26,11 +26,11 @@ object BillResponse {
       case other => deserializationError(s"Expected JsString, got $other")
     }
   }
-  implicit lazy val billItemFormat: RootJsonFormat[BillItem] = jsonFormat4(BillItem)
-  implicit lazy val billFormat: RootJsonFormat[Bill] = jsonFormat3(Bill)
+  implicit lazy val billItemFormat: RootJsonFormat[BillViewItem] = jsonFormat4(BillViewItem)
+  implicit lazy val billFormat: RootJsonFormat[BillView] = jsonFormat3(BillView)
   implicit lazy val billResponseEncoder: RootJsonFormat[BillResponse] = jsonFormat2(BillResponse.apply)
 }
 
-case class Bill(name: String, items: Seq[BillItem], date: LocalDate)
+case class BillView(name: String, items: Seq[BillViewItem], date: LocalDate)
 
-case class BillItem(name: String, description: Option[String], price: BigDecimal, count: BigDecimal)
+case class BillViewItem(name: String, description: Option[String], price: BigDecimal, count: BigDecimal)

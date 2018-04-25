@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.http.scaladsl.server.directives.MethodDirectives
 import akka.http.scaladsl.server.directives.PathDirectives
 import akka.http.scaladsl.server.directives.RouteDirectives
-import ru.fintech.school.ubilling.domain.Bill
+import ru.fintech.school.ubilling.domain.BillView
 import ru.fintech.school.ubilling.domain.BillResponse
 import ru.fintech.school.ubilling.handler.BillService
 
