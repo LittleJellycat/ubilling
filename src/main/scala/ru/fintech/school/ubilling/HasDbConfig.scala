@@ -1,9 +1,5 @@
 package ru.fintech.school.ubilling
 
-/**
-  * Created by Nikolay Poperechnyi on 23.04.18.
-  */
-
 import com.typesafe.config.ConfigFactory
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -18,14 +14,6 @@ trait HasDbConfig {
 
   def db = config.db
 }
-
-/*trait HasDbConfigPath[P <: BasicProfile] extends HasDbConfig[P] {
-  protected[this] val path: String
-
-  override lazy val config: DatabaseConfig[P] = DatabaseConfig.forConfig(path)
-}
-*/
-
 
 object H2Db extends HasDbConfig {
   val path = "h2"
@@ -55,5 +43,3 @@ object DbConfigProvider extends DbConfigProvider {
     DatabaseConfig.forConfig[JdbcProfile](selectedConfig, config)
   }
 }
-
-

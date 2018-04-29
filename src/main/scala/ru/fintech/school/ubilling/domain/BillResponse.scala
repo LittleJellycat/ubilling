@@ -1,5 +1,6 @@
 package ru.fintech.school.ubilling.domain
 
+import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalQueries
@@ -10,6 +11,8 @@ import DefaultJsonProtocol._
 
 case class BillResponse(id: UUID, bill: BillView)
 object BillResponse {
+  implicit def localDateToTimestamp(ld: LocalDate): Timestamp = Timestamp.valueOf(ld.atStartOfDay())
+
   implicit lazy val localDateFormat: JsonFormat[LocalDate] = new JsonFormat[LocalDate] {
     override def write(obj: LocalDate): JsValue = JsString(DateTimeFormatter.ISO_DATE.format(obj))
 

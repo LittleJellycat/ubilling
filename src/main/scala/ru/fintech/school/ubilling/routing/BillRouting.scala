@@ -1,21 +1,12 @@
 package ru.fintech.school.ubilling.routing
 
-import java.util.UUID
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.FutureDirectives
-import akka.http.scaladsl.server.directives.MethodDirectives
-import akka.http.scaladsl.server.directives.PathDirectives
-import akka.http.scaladsl.server.directives.RouteDirectives
-import ru.fintech.school.ubilling.domain.BillView
-import ru.fintech.school.ubilling.domain.BillResponse
+import akka.http.scaladsl.server.directives.{FutureDirectives, MethodDirectives, PathDirectives, RouteDirectives}
+import ru.fintech.school.ubilling.domain.{BillResponse, BillView}
 import ru.fintech.school.ubilling.handler.BillService
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 object BillRouting extends RouteDirectives
   with PathDirectives
@@ -28,13 +19,24 @@ object BillRouting extends RouteDirectives
   def route(handler: BillService): Route = {
     pathPrefix("api" / "v1") {
       pathPrefix("bill") {
-        path(JavaUUID) { billId =>
-          onSuccess(handler.findBill(billId)) {
+        get {
+          pathPrefix(JavaUUID) { billId =>
+            onSuccess(handler.findBill(billId)) {
               case Some(bill) => complete(BillResponse(billId, bill))
               case None => complete(HttpResponse(StatusCodes.NotFound))
             }
           }
+        } ~
+        post {
+          entity(as[BillView]) { bill =>
+            onSuccess(handler.addBill(bill)) {
+              case Some(billId) => complete(billId.toString)
+              case None => complete(HttpResponse(StatusCodes.InternalServerError))
+            }
+
+          }
         }
       }
     }
+  }
 }

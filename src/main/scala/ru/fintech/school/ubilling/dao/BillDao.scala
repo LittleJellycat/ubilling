@@ -1,25 +1,25 @@
 package ru.fintech.school.ubilling.dao
 
-import java.sql.Timestamp
-import java.time.LocalDate
 import java.util.UUID
 
 import ru.fintech.school.ubilling.HasDbConfigProvider
 import ru.fintech.school.ubilling.schema.TableDefinitions._
-import slick.jdbc.JdbcProfile
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
 trait BillDao {
   def findBill(id: UUID): Future[Option[Bill]]
+
+  def addBill(bill: Bill): Future[Int]
 }
 
 trait BillItemsDao {
   def findItems(billId: UUID): Future[Seq[BillItem]]
+
+  def addItems(items: Seq[BillItem]): Future[Option[Int]]
 }
 
-object InMemoryBillDao extends BillDao {
+/*object InMemoryBillDao extends BillDao {
   private val storage = TrieMap[UUID, Bill]()
 
   def findBill(id: UUID): Future[Option[Bill]] = {
@@ -34,7 +34,7 @@ object InMemoryBillDao extends BillDao {
       Future.successful(storage.get(id))
     }
   }
-}
+}*/
 
 trait RelationalBillDao extends BillDao
   with HasDbConfigProvider
@@ -44,6 +44,10 @@ trait RelationalBillDao extends BillDao
 
   override def findBill(id: UUID): Future[Option[Bill]] = {
     db.run(bills.filter(_.bid === id).result.headOption)
+  }
+
+  override def addBill(bill: Bill): Future[Int] = {
+    db.run(bills += bill)
   }
 }
 
@@ -55,6 +59,10 @@ trait RelationalBillItemsDao extends BillItemsDao
 
   override def findItems(billId: BillId): Future[Seq[BillItem]] = {
     db.run(billItems.filter(_.bid === billId).result)
+  }
+
+  override def addItems(items: Seq[BillItem]): Future[Option[Int]] = {
+    db.run(billItems ++= items)
   }
 }
 
