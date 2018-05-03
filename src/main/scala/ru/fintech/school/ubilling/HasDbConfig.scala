@@ -10,9 +10,9 @@ trait HasDbConfig {
 
   final lazy val profile: JdbcProfile = config.profile
 
-  def close() = config.db.close()
+  def close(): Unit = config.db.close()
 
-  def db = config.db
+  def db: JdbcProfile#Backend#Database = config.db
 }
 
 object H2Db extends HasDbConfig {

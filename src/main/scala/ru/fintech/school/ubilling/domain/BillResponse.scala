@@ -6,10 +6,11 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalQueries
 import java.util.UUID
 
+import spray.json.DefaultJsonProtocol._
 import spray.json._
-import DefaultJsonProtocol._
 
 case class BillResponse(id: UUID, bill: BillView)
+
 object BillResponse {
   implicit def localDateToTimestamp(ld: LocalDate): Timestamp = Timestamp.valueOf(ld.atStartOfDay())
 

@@ -1,11 +1,10 @@
 package ru.fintech.school.ubilling.handler
 
-import java.sql.Timestamp
 import java.util.UUID
 
 import ru.fintech.school.ubilling.dao.{BillDao, BillItemsDao}
-import ru.fintech.school.ubilling.domain.{BillView, BillViewItem}
 import ru.fintech.school.ubilling.domain.BillResponse._
+import ru.fintech.school.ubilling.domain.{BillView, BillViewItem}
 import ru.fintech.school.ubilling.schema.TableDefinitions.{Bill, BillId, BillItem}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,10 +41,10 @@ object BillImplicits {
       case BillItem(_, n, d, p, c, _) => BillViewItem(n, d, p, c)
     }
   }
-
 }
 
 class BillServiceImpl(dao: BillItemsDao with BillDao) extends BillService {
+
   import BillImplicits._
 
   override def findBill(billId: BillId): Future[Option[BillView]] = {
@@ -65,5 +64,4 @@ class BillServiceImpl(dao: BillItemsDao with BillDao) extends BillService {
       case _ => None
     }
   }
-
 }
