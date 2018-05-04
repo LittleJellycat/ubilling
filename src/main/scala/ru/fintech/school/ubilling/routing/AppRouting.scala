@@ -7,7 +7,9 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.{FutureDirectives, MethodDirectives, PathDirectives, RouteDirectives}
 import ru.fintech.school.ubilling.domain.UserResponse._
 import ru.fintech.school.ubilling.domain._
-import ru.fintech.school.ubilling.handler.{BillService, UserBillService, UserService}
+import ru.fintech.school.ubilling.handler.{BillService, RequestHandler, UserBillService, UserService}
+
+import scala.concurrent.Future
 
 object AppRouting extends RouteDirectives
   with PathDirectives
@@ -18,51 +20,41 @@ object AppRouting extends RouteDirectives
   import ru.fintech.school.ubilling.domain.BillResponse._
 
   def route(
-    billService: BillService,
-    userService: UserService,
-    userBillService: UserBillService
+    handler: RequestHandler
   ): Route = {
     pathPrefix("api" / "v1") {
       pathPrefix("bill") {
         // api/v1/bill/{bill-id}
         (get & path(JavaUUID)) { billId =>
-          onSuccess(billService.findBill(billId) zip userBillService.findUserIds(billId)) {
-            case (Some(bill), users) => complete(BillResponse(billId, bill))
-            case _ => complete(HttpResponse(StatusCodes.NotFound))
-          } // api/v1/bill
-        } ~ (post & entity(as[BillView])) { bill =>
-          onSuccess(billService.addBill(bill)) {
-            case Some(billId) => complete(billId.toString)
-            case None => complete(HttpResponse(StatusCodes.InternalServerError))
+          complete(handler.findBill(billId))
+        } ~ // api/v1/bill/{bill-id}/users
+          (get & path(JavaUUID / "users")) { billId =>
+            complete(handler.findUserIds(billId))
+          } ~ // api/v1/bill/
+          (pathEnd & post & entity(as[BillView])) { bill =>
+            complete(handler.addBill(bill))
           }
-        }
-      } ~ pathPrefix("user") {
-        post {
+      } ~
+        pathPrefix("user") {
           // api/v1/user/assign-bill/{bill-id}&uid={user-id}
-          (path("assign-bill" / JavaUUID) & parameter('uid.as[Long])) { (bid, uid) =>
-            onSuccess(userBillService.assignBill(uid, bid)) { _ =>
-              complete(HttpResponse(StatusCodes.OK))
+          (post & path("assign-bill" / JavaUUID)
+            & parameter('uid.as[Long])) { (bid, uid) =>
+            complete(handler.assignBill(bid, uid))
+          } ~
+            get {
+              // api/v1/user/{user-id}/bills/
+              path(LongNumber / "bills") { userId =>
+                complete(handler.findBillIds(userId))
+              } ~ // api/v1/user/{user-id}
+                path(LongNumber) { userId =>
+                  complete(handler.findUser(userId))
+                }
+            } ~ // api/v1/user/
+            (pathEnd & post & entity(as[UserView])) { user =>
+              complete(handler.addUser(user))
             }
-          }
-        } ~ get {
-          // api/v1/user/{user-id}/bills/
-          path(LongNumber / "bills") { userId =>
-            onSuccess(userBillService.findBillIds(userId)) { ids =>
-              complete(ids.mkString)
-            } // api/v1/user/{user-id}
-          } ~ path(LongNumber) { userId =>
-            onSuccess(userService.findUser(userId) zip userBillService.findBillIds(userId)) {
-              case (Some(u), bills) => complete(u.email + "\n" + bills.mkString(" "))
-              case _ => complete(HttpResponse(StatusCodes.NotFound))
-            }
-          } // api/v1/user/
-        } ~ (pathEnd & post & entity(as[UserView])) { user =>
-          onSuccess(userService.addUser(user.email, user.phone)) {
-            case Some(uid) => complete(uid.toString)
-            case None => complete(HttpResponse(StatusCodes.InternalServerError))
-          }
         }
-      }
     }
   }
 }
+

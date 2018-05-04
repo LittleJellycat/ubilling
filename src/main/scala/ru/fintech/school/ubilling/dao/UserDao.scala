@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait UserDao {
-  def addUser(user: User): Future[Option[UserId]]
+  def addUser(user: User): Future[Either[Throwable, UserId]]
 
   def findUser(userId: UserId): Future[Option[User]]
 }
@@ -26,9 +26,9 @@ trait RelationalUserDao extends UserDao
 
   import profile.api._
 
-  override def addUser(user: User): Future[Option[UserId]] = {
+  override def addUser(user: User): Future[Either[Throwable, UserId]] = {
     val res = users returning users.map(_.uid) += user
-    db.run(res.asTry).map(_.toOption)
+    db.run(res.asTry).map(_.toEither)
   }
 
   override def findUser(userId: UserId): Future[Option[User]] = {
