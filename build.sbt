@@ -10,11 +10,16 @@ libraryDependencies ++= Seq(
   "io.spray" %% "spray-json" % "1.3.3",
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.1",
   "com.typesafe.akka" %% "akka-stream" % "2.5.12",
+  "com.typesafe.slick" %% "slick" % "3.2.3",
+  "com.h2database" % "h2" % "1.4.192",
+  "org.slf4j" % "slf4j-nop" % "1.6.4",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3",
   "com.typesafe" % "config" % "1.3.2",
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.12" % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.5.12" % Test,
-  "com.typesafe.akka" %% "akka-http-testkit" % "10.1.1" % Test,
-  "com.typesafe.slick" %% "slick" % "3.2.3"
+  "com.typesafe.akka" %% "akka-http-testkit" % "10.1.1" % Test
+
 )
 libraryDependencies += "javax.mail" % "mail" % "1.5.0-b01"
 
