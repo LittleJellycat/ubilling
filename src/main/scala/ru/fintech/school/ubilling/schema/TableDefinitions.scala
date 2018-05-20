@@ -8,7 +8,14 @@ import ru.fintech.school.ubilling.HasDbConfigProvider
 object TableDefinitions {
   type BillId = UUID
   type BillItemId = UUID
+  type ImageId = UUID
   type UserId = Long
+
+  case class User(
+    uid: UserId,
+    email: String,
+    phone: Option[String]
+  )
 
   case class Bill(id: BillId, name: String, date: Timestamp)
 
@@ -19,10 +26,16 @@ object TableDefinitions {
     bid: BillId
   )
 
-  case class User(
+  case class BillPhoto(
+    bid: BillId,
+    photoId: ImageId,
+    lastUpdated: Timestamp,
+    data: Array[Byte]
+  )
+
+  case class UserBill(
     uid: UserId,
-    email: String,
-    phone: Option[String]
+    bid: BillId
   )
 
   trait UsersTable {
@@ -43,7 +56,6 @@ object TableDefinitions {
     val users: TableQuery[Users] = TableQuery[Users]
   }
 
-
   trait BillsTable {
     self: HasDbConfigProvider =>
 
@@ -62,11 +74,6 @@ object TableDefinitions {
     val bills: TableQuery[Bills] = TableQuery[Bills]
   }
 
-  case class UserBill(
-    uid: UserId,
-    bid: BillId
-  )
-
   trait UsersBillsTable extends BillsTable with UsersTable {
     self: HasDbConfigProvider =>
 
@@ -79,7 +86,8 @@ object TableDefinitions {
 
       def pk_constraint = primaryKey("UB_PK", (uid, bid))
 
-      def user_fk_constraint = foreignKey("FK_BID", uid, users)(_.uid, onDelete = ForeignKeyAction.Cascade)
+      def user_fk_constraint = foreignKey("FK_UID", uid, users)(_.uid, onDelete = ForeignKeyAction.Cascade)
+
       def bill_fk_constraint = foreignKey("FK_BID", bid, bills)(_.bid, onDelete = ForeignKeyAction.Cascade)
 
       def * = (uid, bid) <> (UserBill.tupled, UserBill.unapply)
@@ -105,7 +113,7 @@ object TableDefinitions {
 
       def count = column[BigDecimal]("ITEMS_COUNT")
 
-      def bid = column[BillId]("BILL_ID")
+      def bid = column[BillId]("BID")
 
       def fk = foreignKey("FK_ITEMS_BID", bid, bills)(_.bid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
@@ -115,4 +123,23 @@ object TableDefinitions {
     val billItems: TableQuery[BillItems] = TableQuery[BillItems]
   }
 
+  trait BillsPhotosTable {
+    self: HasDbConfigProvider =>
+
+    import profile.api._
+
+    class BillsPhotos(tag: Tag) extends Table[BillPhoto](tag, "BILL_PHOTOS") {
+      def bid = column[BillId]("BID", O.PrimaryKey)
+
+      def imgId = column[ImageId]("IMG_ID")
+
+      def lastUpdated = column[Timestamp]("LAST_UPDATED")
+
+      def data = column[Array[Byte]]("IMG")
+
+      override def * = (bid, imgId, lastUpdated, data) <> (BillPhoto.tupled, BillPhoto.unapply)
+    }
+
+    val billsPhotos: TableQuery[BillsPhotos] = TableQuery[BillsPhotos]
+  }
 }

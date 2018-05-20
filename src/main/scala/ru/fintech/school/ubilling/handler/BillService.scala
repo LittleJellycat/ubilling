@@ -2,6 +2,8 @@ package ru.fintech.school.ubilling.handler
 
 import java.util.UUID
 
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Sink
 import ru.fintech.school.ubilling.dao.{BillDao, BillItemsDao}
 import ru.fintech.school.ubilling.domain.BillResponse._
 import ru.fintech.school.ubilling.domain.{BillView, BillViewItem}
@@ -14,6 +16,10 @@ trait BillService {
   def findBill(billId: BillId): Future[Option[BillView]]
 
   def addBill(billView: BillView): Future[Option[BillId]]
+
+  def getPhoto(billId: BillId): Future[Option[Array[Byte]]]
+
+  def addPhoto(billId: BillId, photo: Array[Byte]): Future[Boolean]
 }
 
 object BillImplicits {
@@ -43,7 +49,8 @@ object BillImplicits {
   }
 }
 
-class BillServiceImpl(dao: BillItemsDao with BillDao) extends BillService {
+class BillServiceImpl(dao: BillItemsDao with BillDao)
+  (implicit val materializer: ActorMaterializer) extends BillService {
 
   import BillImplicits._
 
@@ -63,5 +70,18 @@ class BillServiceImpl(dao: BillItemsDao with BillDao) extends BillService {
       case (1, _) => Some(uuid)
       case _ => None
     }
+  }
+
+  override def addPhoto(
+    billId: BillId, photo: Array[Byte]
+  ): Future[Boolean] = {
+    // TODO: compression/validation
+    dao.addPhoto(billId, photo)
+  }
+
+  override def getPhoto(
+    billId: BillId
+  ): Future[Option[Array[Byte]]] = {
+    dao.getPhoto(billId).runWith(Sink.headOption)
   }
 }

@@ -2,7 +2,10 @@ package ru.fintech.school.ubilling.handler
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpEntity, HttpResponse, MediaTypes, StatusCodes}
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Framing, Source}
+import akka.util.ByteString
 import ru.fintech.school.ubilling.domain.{BillResponse, BillView, UserResponse, UserView}
 import ru.fintech.school.ubilling.schema.TableDefinitions.{BillId, User, UserId}
 import spray.json._
@@ -10,28 +13,40 @@ import spray.json._
 import scala.concurrent.{ExecutionContext, Future}
 
 
-trait RequestHandler {
+trait BillRequestHandler {
+
+  def processPhotoStream(billId: BillId, userId: UserId, source: Source[ByteString, Any]): Future[ToResponseMarshallable]
+
   def findBill(billId: BillId): Future[ToResponseMarshallable]
-
-  def addBill(bill: BillView): Future[ToResponseMarshallable]
-
-  def findUserIds(billId: BillId): Future[ToResponseMarshallable]
-
-  def findUser(userId: UserId): Future[ToResponseMarshallable]
-
-  def addUser(user: UserView): Future[ToResponseMarshallable]
 
   def findBillIds(userId: UserId): Future[ToResponseMarshallable]
 
-  def assignBill(billId: BillId, userId: UserId): Future[ToResponseMarshallable]
+  def addBill(bill: BillView): Future[ToResponseMarshallable]
 
+  def getPhoto(billId: BillId): Future[ToResponseMarshallable]
+
+  def addPhoto(billId: BillId, photo: Array[Byte]): Future[ToResponseMarshallable]
+}
+
+trait UserRequestHandler {
+
+  def addUser(user: UserView): Future[ToResponseMarshallable]
+
+  def findUser(userId: UserId): Future[ToResponseMarshallable]
+
+  def findUserIds(billId: BillId): Future[ToResponseMarshallable]
+}
+
+trait RequestHandler extends BillRequestHandler with UserRequestHandler {
+
+  def assignBill(billId: BillId, userId: UserId): Future[ToResponseMarshallable]
 }
 
 class RequestHandlerImpl(
   userService: UserService,
   billService: BillService,
   userBillService: UserBillService
-)(implicit val ec: ExecutionContext) extends RequestHandler with SprayJsonSupport {
+)(implicit val ec: ExecutionContext, am: ActorMaterializer) extends RequestHandler with SprayJsonSupport {
 
   import BillResponse._
 
@@ -78,5 +93,43 @@ class RequestHandlerImpl(
     userBillService.assignBill(userId, billId).map { res =>
       HttpResponse(if (res) StatusCodes.OK else StatusCodes.BadRequest)
     }
+  }
+
+  override def addPhoto(
+    billId: BillId, photo: Array[Byte]
+  ): Future[ToResponseMarshallable] = {
+    //TODO: error handling
+    billService.addPhoto(billId, photo).map { res =>
+      HttpResponse(
+        if (res) StatusCodes.OK else StatusCodes.InternalServerError
+      )
+    }
+  }
+
+  override def getPhoto(
+    billId: BillId
+  ): Future[ToResponseMarshallable] = {
+    billService.getPhoto(billId).map {
+      case Some(photo) =>
+        val entity = HttpEntity.Strict(
+          MediaTypes.`application/octet-stream`,
+          ByteString(photo)
+        )
+        HttpResponse(StatusCodes.OK, entity = entity)
+      case None => HttpResponse(StatusCodes.NotFound)
+    }
+  }
+
+  override def processPhotoStream(
+    billId: BillId,
+    userId: UserId,
+    source: Source[ByteString, Any]
+  ): Future[ToResponseMarshallable] = {
+    val flow = Framing.delimiter(
+      ByteString("\n"), 1000, allowTruncation = true
+    )
+    source.via(flow)
+      .runFold(Array.emptyByteArray)((a, b) => a ++ b.toArray[Byte])
+      .map(addPhoto(billId, _))
   }
 }
