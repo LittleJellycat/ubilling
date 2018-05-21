@@ -10,6 +10,8 @@ trait UserDao {
   def addUser(user: User): Future[Either[Throwable, UserId]]
 
   def findUser(userId: UserId): Future[Option[User]]
+
+  def findUserByEmail(mail: String): Future[Option[User]]
 }
 
 trait UserBillDao {
@@ -33,6 +35,10 @@ trait RelationalUserDao extends UserDao
 
   override def findUser(userId: UserId): Future[Option[User]] = {
     db.run(users.filter(_.uid === userId).result.headOption)
+  }
+
+  override def findUserByEmail(mail: String): Future[Option[User]] = {
+    db.run(users.filter(_.email === mail).result.headOption)
   }
 }
 

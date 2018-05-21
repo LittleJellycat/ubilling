@@ -19,4 +19,8 @@ class UserServiceImpl(dao: UserDao) extends UserService {
   override def findUser(userId: UserId): Future[Option[User]] = {
     dao.findUser(userId)
   }
+
+  def findUserByEmail(mail: String): Future[Option[User]] = {
+    dao.findUserByEmail(mail)
+  }
 }
