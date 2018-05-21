@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.12.5"
 
-libraryDependencies ++= Seq(
+libraryDependencies ++= Seq("org.dispatchhttp" %% "dispatch-core" % "0.14.0",
   "com.typesafe.akka" %% "akka-actor" % "2.5.12",
   "com.typesafe.akka" %% "akka-http" % "10.1.1",
   "io.spray" %% "spray-json" % "1.3.3",
@@ -15,10 +15,10 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-nop" % "1.6.4",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3",
   "com.typesafe" % "config" % "1.3.2",
+  "info.mukel" %% "telegrambot4s" % "3.0.14",
   "org.scalatest" %% "scalatest" % "3.0.5" % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.12" % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.5.12" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % "10.1.1" % Test
-
 )
 

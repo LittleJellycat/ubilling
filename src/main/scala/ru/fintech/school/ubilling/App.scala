@@ -9,6 +9,7 @@ import ru.fintech.school.ubilling.dao.UserBillDAL
 import ru.fintech.school.ubilling.dao.UserBillDAL._
 import ru.fintech.school.ubilling.handler.{BillServiceImpl, RequestHandlerImpl, UserBillServiceImpl, UserServiceImpl}
 import ru.fintech.school.ubilling.routing.AppRouting
+//import ru.fintech.school.ubilling.telegram.Bot
 
 import scala.concurrent.ExecutionContextExecutor
 
@@ -29,4 +30,5 @@ object BillApp extends App {
   Http().bindAndHandle(
     routes, config.getString("http.interface"), config.getInt("http.port")
   )
+ // Bot.run()
 }
