@@ -7,7 +7,7 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
 import ru.fintech.school.ubilling.dao.UserBillDAL
 import ru.fintech.school.ubilling.dao.UserBillDAL._
-import ru.fintech.school.ubilling.handler.{BillServiceImpl, UserBillServiceImpl, UserServiceImpl}
+import ru.fintech.school.ubilling.handler.{BillServiceImpl, RequestHandlerImpl, UserBillServiceImpl, UserServiceImpl}
 import ru.fintech.school.ubilling.routing.AppRouting
 
 import scala.concurrent.ExecutionContextExecutor
@@ -22,7 +22,10 @@ object BillApp extends App {
   val billService = new BillServiceImpl(UserBillDAL)
   val userService = new UserServiceImpl(UserBillDAL)
   val userBillService = new UserBillServiceImpl(UserBillDAL)
-  val routes = AppRouting.route(billService, userService, userBillService)
+  val requestHandler = new RequestHandlerImpl(
+    userService, billService, userBillService
+  )
+  val routes = AppRouting.route(requestHandler)
   Http().bindAndHandle(
     routes, config.getString("http.interface"), config.getInt("http.port")
   )

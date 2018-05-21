@@ -12,7 +12,7 @@ import ru.fintech.school.ubilling.dao.UserBillDAL
 import ru.fintech.school.ubilling.dao.UserBillDAL.{createSchema, dropSchema}
 import ru.fintech.school.ubilling.domain.{BillResponse, BillView, BillViewItem}
 import ru.fintech.school.ubilling.domain.BillResponse._
-import ru.fintech.school.ubilling.handler.{BillServiceImpl, UserBillServiceImpl, UserServiceImpl}
+import ru.fintech.school.ubilling.handler._
 import ru.fintech.school.ubilling.routing.AppRouting
 
 import scala.collection.mutable
@@ -27,13 +27,17 @@ class AppRoutingSpec extends WordSpec
   val billService = new BillServiceImpl(UserBillDAL)
   val userService = new UserServiceImpl(UserBillDAL)
   val userBillService = new UserBillServiceImpl(UserBillDAL)
-  val route = AppRouting.route(billService, userService, userBillService)
+  val handler = new RequestHandlerImpl(userService, billService, userBillService)
+  val route = AppRouting.route(handler)
+
+  def genItems(bn: Int, count: Int = 10) =
+    (1 to count).map(m => BillViewItem(s"order-$bn-$m", Some(s"item $m"), bn, m))
 
   "The service" should {
     "Add new bills" in {
-      val billViews = (1 to 1000).map(n => BillView(
+      val billViews = (1 to 5).map(n => BillView(
         s"bill-$n",
-        (1 to 10).map(m => BillViewItem(s"order-$n-$m", Some(s"item $m"), n, m)),
+        genItems(n),
         LocalDate.now().minusDays(n)
       ))
       val uuids = mutable.MutableList[UUID]()
