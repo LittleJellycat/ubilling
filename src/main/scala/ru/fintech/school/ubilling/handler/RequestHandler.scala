@@ -4,22 +4,25 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, MediaTypes, StatusCodes}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Framing, Source}
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import ru.fintech.school.ubilling.domain.{BillResponse, BillView, UserResponse, UserView}
 import ru.fintech.school.ubilling.schema.TableDefinitions.{BillId, User, UserId}
 import spray.json._
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 
 trait BillRequestHandler {
 
-  def processPhotoStream(billId: BillId, userId: UserId, source: Source[ByteString, Any]): Future[ToResponseMarshallable]
+  def processPhotoStream(
+    billId: BillId, userId: UserId, source: Source[ByteString, Any]
+  ): Future[ToResponseMarshallable]
 
   def findBill(billId: BillId): Future[ToResponseMarshallable]
 
-  def findBillIds(userId: UserId): Future[ToResponseMarshallable]
+  def findUserIds(billId: BillId): Future[ToResponseMarshallable]
 
   def addBill(bill: BillView): Future[ToResponseMarshallable]
 
@@ -34,12 +37,14 @@ trait UserRequestHandler {
 
   def findUser(userId: UserId): Future[ToResponseMarshallable]
 
-  def findUserIds(billId: BillId): Future[ToResponseMarshallable]
+  def findBillIds(userId: UserId): Future[ToResponseMarshallable]
+
+  def assignBill(billId: BillId, userId: UserId): Future[ToResponseMarshallable]
+
 }
 
 trait RequestHandler extends BillRequestHandler with UserRequestHandler {
 
-  def assignBill(billId: BillId, userId: UserId): Future[ToResponseMarshallable]
 }
 
 class RequestHandlerImpl(
@@ -101,14 +106,13 @@ class RequestHandlerImpl(
     //TODO: error handling
     billService.addPhoto(billId, photo).map { res =>
       HttpResponse(
-        if (res) StatusCodes.OK else StatusCodes.InternalServerError
+        if (res) StatusCodes.OK
+        else StatusCodes.InternalServerError
       )
     }
   }
 
-  override def getPhoto(
-    billId: BillId
-  ): Future[ToResponseMarshallable] = {
+  override def getPhoto(billId: BillId): Future[ToResponseMarshallable] = {
     billService.getPhoto(billId).map {
       case Some(photo) =>
         val entity = HttpEntity.Strict(
@@ -125,11 +129,9 @@ class RequestHandlerImpl(
     userId: UserId,
     source: Source[ByteString, Any]
   ): Future[ToResponseMarshallable] = {
-    val flow = Framing.delimiter(
-      ByteString("\n"), 1000, allowTruncation = true
-    )
-    source.via(flow)
-      .runFold(Array.emptyByteArray)((a, b) => a ++ b.toArray[Byte])
+    val builder = new ArrayBuffer[Byte]().mapResult(_.toArray)
+    source.runFold(builder)((a, b) => a ++= b).map(_.result())
       .map(addPhoto(billId, _))
   }
+
 }

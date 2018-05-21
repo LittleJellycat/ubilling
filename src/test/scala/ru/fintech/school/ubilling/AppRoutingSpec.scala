@@ -30,17 +30,19 @@ class AppRoutingSpec extends WordSpec
   val handler = new RequestHandlerImpl(userService, billService, userBillService)
   val route = AppRouting.route(handler)
 
+  def genItems(bn: Int, count: Int = 10) =
+    (1 to count).map(m => BillViewItem(s"order-$bn-$m", Some(s"item $m"), bn, m))
+
   "The service" should {
     "Add new bills" in {
       val billViews = (1 to 5).map(n => BillView(
         s"bill-$n",
-        (1 to 10).map(m => BillViewItem(s"order-$n-$m", Some(s"item $m"), n, m)),
+        genItems(n),
         LocalDate.now().minusDays(n)
       ))
       val uuids = mutable.MutableList[UUID]()
       for (view <- billViews) {
         Post("/api/v1/bill", view) ~> route ~> check {
-          println(responseAs[String])
           Get(s"/api/v1/bill/${responseAs[String]}") ~> route ~> check {
             val res = responseAs[BillResponse]
             res.bill.name shouldBe view.name
