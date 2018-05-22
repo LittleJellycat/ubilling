@@ -68,7 +68,7 @@ object Bot extends TelegramBot
   onCommand("/getbill") { implicit msg =>
     createUserIfDoesntExist(msg)
     val messageText = msg.text.getOrElse("")
-    if (messageText == "/getBill")
+    if (messageText == "/getbill")
       reply("Please use the following format:\n/getBill BillID")
     else {
       val billId = messageText.substring(messageText.indexOf(" ") + 1)
