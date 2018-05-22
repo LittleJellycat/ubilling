@@ -58,8 +58,9 @@ object Bot extends TelegramBot
     else {
       val text = msg.text.get.substring(5).split("\n")
       postBill(text.head, text.tail, msg.from.get.username.get).onComplete(id => {
-        reply("Added new bill. You can share it by ID:")
-        reply(id.get.getOrElse("lul").toString)
+        reply("Added new bill. You can share it by ID:").onComplete(_ => {
+          reply(id.get.getOrElse("lul").toString)
+        })
       })
     }
   }
